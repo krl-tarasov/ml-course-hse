@@ -37,11 +37,11 @@ class LinearRegression:
         raise NotImplementedError("predict function is not implemented")
 
     def compute_gradients(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
+        height = y.shape[0]
         if self.loss_function is LossFunction.MSE:
-            # TODO: реализовать вычисление градиентов для MSE
-            raise NotImplementedError("MSE gradients is not implemented")
+            gradient = -2 * (X.T @ (y - X @ self.w)) / height
         # elif self.loss_function is ...
-        return None
+        return gradient
 
     def compute_loss(self, X: np.ndarray, y: np.ndarray) -> float:
         if self.loss_function is LossFunction.MSE:

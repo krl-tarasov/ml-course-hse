@@ -24,7 +24,7 @@ class TimeDecayLR(LearningRateSchedule):
 
     def get_lr(self, iteration: int) -> float:
         # TODO: реализовать формулу затухающего шага обучения
-        raise NotImplementedError
+        return self.lambda_ * (self.s0 / (self.s0 + iteration)) ** self.p
 
 
 # ===== Base Optimizer =====
@@ -53,8 +53,11 @@ class VanillaGradientDescent(BaseDescent):
         # Можно использовать атрибуты класса self.model
         X_train = self.model.X_train
         y_train = self.model.y_train
-        # gradient = ...
-        raise NotImplementedError
+        gradient = model.compute_gradients(X_batch, y_batch)
+
+        lr = lr_schdule.get_lr(self.iteration)
+        model.w = weights - lr * gradient
+        return gradient
 
 
 class StochasticGradientDescent(BaseDescent):
@@ -67,7 +70,18 @@ class StochasticGradientDescent(BaseDescent):
         # 1) выбрать случайный батч
         # 2) вычислить градиенты на батче
         # 3) обновить веса модели
-        raise NotImplementedError
+
+        X_train = self.model.X_train
+        y_train = self.model.y_train
+
+        random_indices = np.random.choice(y_train.shape[0], self.batch_size, replace = False)
+        X_Batch, y_batch = X_train[random_indices], y_batch[random_indices]
+        gradient = model.compute_gradients(X_batch, y_batch)
+
+        lr = lr_schdule.get_lr(self.iteration)
+        model.w = weights - lr * gradient
+        return gradient
+
 
 
 class SAGDescent(BaseDescent):
@@ -83,8 +97,15 @@ class SAGDescent(BaseDescent):
         num_objects, num_features = X_train.shape
 
         if self.grad_memory is None:
-            # TODO: инициализировать хранилища при первом вызове 
+            self.grad_sum = np.zeros(num_features)
+            self.grad_memory = np.empty(X_train)
 
+        current_object = [self.iteration % num_objects]
+        X = X_train[current_object]
+        y = y_train[current_object]
+
+        self.model.compute_gradients(X, y)
+        
         # TODO: реализовать SAG
         raise NotImplementedError
 
