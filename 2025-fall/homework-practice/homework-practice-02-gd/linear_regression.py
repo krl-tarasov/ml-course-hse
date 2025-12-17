@@ -33,31 +33,43 @@ class LinearRegression:
         self.loss_history = []
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        # TODO: реализовать функцию предсказания в линейной регрессии
-        raise NotImplementedError("predict function is not implemented")
+        return X @ self.w
 
     def compute_gradients(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
-        height = y.shape[0]
+        num_objects = y.shape[0]
         if self.loss_function is LossFunction.MSE:
-            gradient = -2 * (X.T @ (y - X @ self.w)) / height
+            gradient = -2 * (X.T @ (y - X @ self.w)) / num_objects
         # elif self.loss_function is ...
         return gradient
 
     def compute_loss(self, X: np.ndarray, y: np.ndarray) -> float:
         if self.loss_function is LossFunction.MSE:
-            # TODO: реализовать loss-функцию MSE
-            raise NotImplementedError("MSE is not implemented")
+            rmse = np.linalg.norm(X @ self.w - y)
+            return rmse ** 2
         # elif self.loss_function is ...
         return 0.0
 
     def fit(self, X: np.ndarray, y: np.ndarray):
         # TODO: реализовать обучение модели
-        self.X_train, self.y_train = X, y
-
         if isinstance(self.optimizer, BaseDescent):
-            # ...
             for _ in range(self.max_iter):
                 # 1 шаг градиентного спуска
                 _
-        # elif self.optimizer is ...
-        raise NotImplementedError("Linear Regression training is not implemented")
+        elif self.optimizer is None:
+            self.w = np.linalg.inv(X.T @ X) @ X.T @ y
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            

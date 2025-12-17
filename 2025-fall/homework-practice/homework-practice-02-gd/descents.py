@@ -53,11 +53,11 @@ class VanillaGradientDescent(BaseDescent):
         # Можно использовать атрибуты класса self.model
         X_train = self.model.X_train
         y_train = self.model.y_train
-        gradient = model.compute_gradients(X_batch, y_batch)
+        gradient = model.compute_gradients(X_train, y_train)
 
         lr = lr_schdule.get_lr(self.iteration)
-        model.w = weights - lr * gradient
-        return gradient
+        self.model.w = self.model.w - lr * gradient
+        return (-lr * gradient)
 
 
 class StochasticGradientDescent(BaseDescent):
@@ -79,9 +79,8 @@ class StochasticGradientDescent(BaseDescent):
         gradient = model.compute_gradients(X_batch, y_batch)
 
         lr = lr_schdule.get_lr(self.iteration)
-        model.w = weights - lr * gradient
-        return gradient
-
+        self.self.model.w = self.model.w - lr * gradient
+        return (-lr * gradient)
 
 
 class SAGDescent(BaseDescent):
@@ -98,17 +97,23 @@ class SAGDescent(BaseDescent):
 
         if self.grad_memory is None:
             self.grad_sum = np.zeros(num_features)
-            self.grad_memory = np.empty(X_train)
+            self.grad_memory = np.zeros(X_train)
 
-        current_object = [self.iteration % num_objects]
+        current_object_index = [self.iteration % num_objects]
         X = X_train[current_object]
         y = y_train[current_object]
 
-        self.model.compute_gradients(X, y)
-        
-        # TODO: реализовать SAG
-        raise NotImplementedError
+        new_current_grad = self.model.compute_gradients(X, y)
 
+        old_current_grad = self.grad_memory[current_object_index].copy()
+        self.grad_memory[current_object_index] = new_current_grad
+        grad_diff = (new_current_grad - old_current_grad) / num_objects
+        self.grad_sum = self.grad_sum + grad_diff
+
+        lr = lr_schdule.get_lr(self.iteration)
+        self.model.w = self.model.w - lr * self.grad_sum
+
+        return (- lr * self.grad_sum)
 
 class MomentumDescent(BaseDescent):
     def __init__(self, lr_schedule: LearningRateSchedule = TimeDecayLR, beta=0.9):
@@ -117,9 +122,19 @@ class MomentumDescent(BaseDescent):
         self.velocity = None
 
     def update_weights(self):
-        # TODO: реализовать градиентный спуск с моментумом
-        raise NotImplementedError
+        X_train = self.model.X_train
+        y_train = self.model.y_train
+        _, num_features = X_train.shape
+        gradient = model.compute_gradients(X_train, y_train)
 
+        if self.velocity is None:
+            self.velocity = np.zeros(num_features)
+
+        lr = lr_schdule.get_lr(self.iteration)
+        self.velocity = self.beta * self.velocity + lr * gradient
+
+        self.model.w = self.model.w - self.velocity
+        return -self.velocity
 
 class Adam(BaseDescent):
     def __init__(self, lr_schedule: LearningRateSchedule = TimeDecayLR, beta1=0.9, beta2=0.999, eps=1e-8):
@@ -131,5 +146,23 @@ class Adam(BaseDescent):
         self.v = None
 
     def update_weights(self):
-        # TODO: реализовать Adam по формуле из ноутбука
-        raise NotImplementedError
+        X_train = self.model.X_train
+        y_train = self.model.y_train
+        _, num_features = X_train.shape
+        gradient = model.compute_gradients(X_train, y_train)
+
+        if self.m is None or self.v is None:
+            self.m = 0
+            self.v = 0
+
+        self.m = beta1 * self.m + (1 - beta1) * gradient
+        self.v = beta1 * self.m + (1 - beta1) * gradient ** 2
+
+        m_norm = self.m / (1 - beta1 ** self.iteration) 
+        v_norm = self.v / (1 - beta2 ** self.iteration)
+
+        lr = lr_schdule.get_lr(self.iteration)
+        diff = lr * (m_norm) / np.sqrt(v_norm)  
+        self.model.w = self.model.w - diff
+
+        return diff   
