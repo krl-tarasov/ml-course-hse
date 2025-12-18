@@ -3,6 +3,7 @@ from descents import BaseDescent
 from dataclasses import dataclass
 from enum import auto, Enum
 from typing import Dict, Type, Optional
+import scipy as sp
 
 
 class LossFunction(Enum):
@@ -38,7 +39,15 @@ class LinearRegression:
     def compute_gradients(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
         num_objects = y.shape[0]
         if self.loss_function is LossFunction.MSE:
-            gradient = -2 * (X.T @ (y - X @ self.w)) / num_objects
+            print('calc')
+
+            print(self.w)
+            print(X)
+            
+            print('X * self.w: ', X * self.w)
+
+            print('X.T @ (y - X * self.w: ', X.T @ (y - X * self.w))
+            gradient = -2 * (X.T @ (y - X * self.w)) / num_objects
         # elif self.loss_function is ...
         return gradient
 
@@ -50,14 +59,21 @@ class LinearRegression:
         return 0.0
 
     def fit(self, X: np.ndarray, y: np.ndarray):
-        # TODO: реализовать обучение модели
+        self.X_train = X
+        self.y_train = y
+        
         if isinstance(self.optimizer, BaseDescent):
             for _ in range(self.max_iter):
-                # 1 шаг градиентного спуска
-                _
+                diff = self.optimizer.step()
+                if np.isnan(diff).sum(): 
+                    break
+
         elif self.optimizer is None:
             self.w = np.linalg.inv(X.T @ X) @ X.T @ y
 
+        elif self.optimizer == 'SVD':
+            u_matrix, sigma_matrix, vt_matrix = sp.sparse.linalg.svds(X, 4)
+            self.w = (vt_matrix.T) @ ((u_matrix.T @ y) / sigma_matrix)
 
 
 

@@ -49,11 +49,13 @@ class BaseDescent(ABC):
 # ===== Specific Optimizers =====
 class VanillaGradientDescent(BaseDescent):
     def update_weights(self):
-        # TODO: реализовать vanilla градиентный спуск
-        # Можно использовать атрибуты класса self.model
         X_train = self.model.X_train
         y_train = self.model.y_train
-        gradient = model.compute_gradients(X_train, y_train)
+
+        print(X_train)
+
+        gradient = self.model.compute_gradients(X_train, y_train)
+        print('gradients succesfully computed: ', gradient)
 
         lr = lr_schdule.get_lr(self.iteration)
         self.model.w = self.model.w - lr * gradient
@@ -76,7 +78,7 @@ class StochasticGradientDescent(BaseDescent):
 
         random_indices = np.random.choice(y_train.shape[0], self.batch_size, replace = False)
         X_Batch, y_batch = X_train[random_indices], y_batch[random_indices]
-        gradient = model.compute_gradients(X_batch, y_batch)
+        gradient = self.model.compute_gradients(X_batch, y_batch)
 
         lr = lr_schdule.get_lr(self.iteration)
         self.self.model.w = self.model.w - lr * gradient
@@ -125,7 +127,7 @@ class MomentumDescent(BaseDescent):
         X_train = self.model.X_train
         y_train = self.model.y_train
         _, num_features = X_train.shape
-        gradient = model.compute_gradients(X_train, y_train)
+        gradient = self.model.compute_gradients(X_train, y_train)
 
         if self.velocity is None:
             self.velocity = np.zeros(num_features)
@@ -149,7 +151,7 @@ class Adam(BaseDescent):
         X_train = self.model.X_train
         y_train = self.model.y_train
         _, num_features = X_train.shape
-        gradient = model.compute_gradients(X_train, y_train)
+        gradient = self.model.compute_gradients(X_train, y_train)
 
         if self.m is None or self.v is None:
             self.m = 0
