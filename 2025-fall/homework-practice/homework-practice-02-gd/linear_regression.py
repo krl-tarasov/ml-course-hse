@@ -37,17 +37,10 @@ class LinearRegression:
         return X @ self.w
 
     def compute_gradients(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
-        num_objects = y.shape[0]
+        num_objects, num_features = X.shape
+        
         if self.loss_function is LossFunction.MSE:
-            print('calc')
-
-            print(self.w)
-            print(X)
-            
-            print('X * self.w: ', X * self.w)
-
-            print('X.T @ (y - X * self.w: ', X.T @ (y - X * self.w))
-            gradient = -2 * (X.T @ (y - X * self.w)) / num_objects
+            gradient = -2 * (X.T @ (y - X @ self.w)) / num_objects
         # elif self.loss_function is ...
         return gradient
 
@@ -61,12 +54,18 @@ class LinearRegression:
     def fit(self, X: np.ndarray, y: np.ndarray):
         self.X_train = X
         self.y_train = y
+        num_objects, num_features = X.shape
+        self.w = np.zeros(num_features)
         
         if isinstance(self.optimizer, BaseDescent):
+            self.loss_history.append(self.compute_loss(X, y))
             for _ in range(self.max_iter):
                 diff = self.optimizer.step()
-                if np.isnan(diff).sum(): 
-                    break
+                self.loss_history.append(self.compute_loss(X, y))
+                # if np.isnan(diff).sum(): 
+                #     break
+                # if  np.linalg.norm(diff) ** 2 > self.tolerance: 
+                #     break
 
         elif self.optimizer is None:
             self.w = np.linalg.inv(X.T @ X) @ X.T @ y

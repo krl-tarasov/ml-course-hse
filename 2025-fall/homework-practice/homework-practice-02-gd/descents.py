@@ -42,8 +42,9 @@ class BaseDescent(ABC):
         pass
 
     def step(self):
-        self.update_weights()
+        diff = self.update_weights()
         self.iteration += 1
+        return diff
 
 
 # ===== Specific Optimizers =====
@@ -52,12 +53,9 @@ class VanillaGradientDescent(BaseDescent):
         X_train = self.model.X_train
         y_train = self.model.y_train
 
-        print(X_train)
-
         gradient = self.model.compute_gradients(X_train, y_train)
-        print('gradients succesfully computed: ', gradient)
 
-        lr = lr_schdule.get_lr(self.iteration)
+        lr = self.lr_schedule.get_lr(self.iteration)
         self.model.w = self.model.w - lr * gradient
         return (-lr * gradient)
 
@@ -77,11 +75,11 @@ class StochasticGradientDescent(BaseDescent):
         y_train = self.model.y_train
 
         random_indices = np.random.choice(y_train.shape[0], self.batch_size, replace = False)
-        X_Batch, y_batch = X_train[random_indices], y_batch[random_indices]
+        X_batch, y_batch = X_train[random_indices], y_train[random_indices]
         gradient = self.model.compute_gradients(X_batch, y_batch)
 
-        lr = lr_schdule.get_lr(self.iteration)
-        self.self.model.w = self.model.w - lr * gradient
+        lr = self.lr_schedule.get_lr(self.iteration)
+        self.model.w = self.model.w - lr * gradient
         return (-lr * gradient)
 
 
@@ -97,22 +95,24 @@ class SAGDescent(BaseDescent):
         y_train = self.model.y_train
         num_objects, num_features = X_train.shape
 
+        
         if self.grad_memory is None:
-            self.grad_sum = np.zeros(num_features)
-            self.grad_memory = np.zeros(X_train)
+            self.grad_sum = np.zeros(num_features, float)
+            self.grad_memory = np.zeros([num_objects, num_features], float)
 
         current_object_index = [self.iteration % num_objects]
-        X = X_train[current_object]
-        y = y_train[current_object]
+
+        X = X_train[current_object_index]
+        y = y_train[current_object_index]
 
         new_current_grad = self.model.compute_gradients(X, y)
 
         old_current_grad = self.grad_memory[current_object_index].copy()
         self.grad_memory[current_object_index] = new_current_grad
-        grad_diff = (new_current_grad - old_current_grad) / num_objects
+        grad_diff = ((new_current_grad - old_current_grad) / num_objects).squeeze()
         self.grad_sum = self.grad_sum + grad_diff
 
-        lr = lr_schdule.get_lr(self.iteration)
+        lr = self.lr_schedule.get_lr(self.iteration)
         self.model.w = self.model.w - lr * self.grad_sum
 
         return (- lr * self.grad_sum)
@@ -132,7 +132,7 @@ class MomentumDescent(BaseDescent):
         if self.velocity is None:
             self.velocity = np.zeros(num_features)
 
-        lr = lr_schdule.get_lr(self.iteration)
+        lr = self.lr_schedule.get_lr(self.iteration)
         self.velocity = self.beta * self.velocity + lr * gradient
 
         self.model.w = self.model.w - self.velocity
@@ -154,17 +154,18 @@ class Adam(BaseDescent):
         gradient = self.model.compute_gradients(X_train, y_train)
 
         if self.m is None or self.v is None:
-            self.m = 0
-            self.v = 0
+            self.m = np.zeros(num_features)
+            self.v = np.zeros(num_features)
 
-        self.m = beta1 * self.m + (1 - beta1) * gradient
-        self.v = beta1 * self.m + (1 - beta1) * gradient ** 2
+        self.m = self.beta1 * self.m + (1 - self.beta1) * gradient
+        self.v = self.beta1 * self.v + (1 - self.beta1) * gradient ** 2
 
-        m_norm = self.m / (1 - beta1 ** self.iteration) 
-        v_norm = self.v / (1 - beta2 ** self.iteration)
+        m_norm = self.m / (1 - self.beta1) ** self.iteration
+        v_norm = self.v / (1 - self.beta2) ** self.iteration
 
-        lr = lr_schdule.get_lr(self.iteration)
-        diff = lr * (m_norm) / np.sqrt(v_norm)  
+        lr = self.lr_schedule.get_lr(self.iteration)
+        diff = lr * (m_norm) / (np.sqrt(v_norm) + self.eps)
+
         self.model.w = self.model.w - diff
 
         return diff   
