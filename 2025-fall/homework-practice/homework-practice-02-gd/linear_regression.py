@@ -40,13 +40,14 @@ class LinearRegression:
         num_objects, num_features = X.shape
         
         if self.loss_function is LossFunction.MSE:
-            gradient = -2 * (X.T @ (y - X @ self.w)) / num_objects
+            gradient = -2 * (X.T @ (y - X @ self.w) - self.l2_coef * self.w) / num_objects
         # elif self.loss_function is ...
         return gradient
 
     def compute_loss(self, X: np.ndarray, y: np.ndarray) -> float:
         if self.loss_function is LossFunction.MSE:
-            rmse = np.linalg.norm(X @ self.w - y)
+            num_objects, num_features = X.shape
+            rmse = np.linalg.norm(X @ self.w - y) / num_objects
             return rmse ** 2
         # elif self.loss_function is ...
         return 0.0
